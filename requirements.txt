@@ -1,4 +1,6 @@
-Flask
+flask[async]
 requests
-beautifulsoup4
+python-dotenv
+aiohttp
 gunicorn
+beautifulsoup4
