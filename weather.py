@@ -101,7 +101,7 @@ async def get_weather_and_forecast():
                     result.append("🌈 맑은 날씨를 즐기세요! ")
 
                 result.append(
-                    f"🌡️ 오늘의 최고 기온은 {max_temp}도, ❄️ 오늘의 최저 기온은 {min_temp}도예요. "
+                    f"🌡️ 오늘의 ❄️ 최저 기온은 {min_temp}도, 최고 기온은 {max_temp}도예요. "
                 )
 
                 return "\n".join(result)
