@@ -4,3 +4,4 @@ python-dotenv
 aiohttp
 gunicorn
 beautifulsoup4
+pytz
