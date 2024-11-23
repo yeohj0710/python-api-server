@@ -19,11 +19,19 @@ async def get_weather_and_forecast():
     now = datetime.now(KST)
 
     if now.hour < 6:
-        base_date = (now - timedelta(days=1)).strftime("%Y%m%d")
-        base_time = "2300"
-    else:
+        return "\n".join(
+            [
+                "⏰ 현재는 오늘 날씨 데이터가 발표되지 않았습니다.",
+                "🌅 오늘의 첫 발표는 오전 6시에 이루어지며, 오전 7시에 알림이 발송됩니다.",
+            ]
+        )
+
+    if now.hour >= 6:
         base_date = now.strftime("%Y%m%d")
         base_time = "0500"
+    else:
+        base_date = now.strftime("%Y%m%d")
+        base_time = "2300"
 
     params = {
         "serviceKey": API_KEY,
@@ -49,15 +57,12 @@ async def get_weather_and_forecast():
                 )
 
                 if not items:
-                    if now.hour < 6:
-                        return "\n".join(
-                            [
-                                "⏰ 오늘(자정 00시 기준)의 날씨 데이터는 아직 발표되지 않았어요.",
-                                "🌅 매일 오전 6시에 오늘의 날씨가 기상청에서 발표되며, 오전 7시에 알림 발송이 진행돼요.",
-                            ]
-                        )
-                    else:
-                        return "❌ 날씨 데이터를 가져오는 데 실패했어요."
+                    return "\n".join(
+                        [
+                            "❌ 현재 날씨 데이터를 가져올 수 없습니다.",
+                            "🌅 오늘 날씨는 오전 6시에 발표되며, 오전 7시에 알림이 발송됩니다.",
+                        ]
+                    )
 
                 hourly_forecast = {}
                 rain_times = []
