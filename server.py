@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, make_response
 import asyncio
 from weather import get_weather_and_forecast
 
@@ -7,23 +7,30 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Hello from the root endpoint!"})
+    return Response(
+        '{"message": "Root endpoint에서 인사드려요! 반가워요!"}',
+        mimetype="application/json; charset=utf-8",
+    )
 
 
 @app.route("/hello", methods=["GET"])
 def hello():
-    return jsonify({"message": "Hello!"})
+    return Response(
+        '{"message": "안녕하세요! \'Hello\' endpoint가 정상적으로 작동하고 있어요."}',
+        mimetype="application/json; charset=utf-8",
+    )
 
 
 @app.route("/weather", methods=["GET"])
 async def weather():
     try:
-        # weather.py의 비동기 함수 호출
         result = await get_weather_and_forecast()
-        return Response(result, mimetype="text/plain")
+        return Response(result, mimetype="text/plain; charset=utf-8")
     except Exception as e:
         return Response(
-            f"Error fetching weather data: {str(e)}", status=500, mimetype="text/plain"
+            f"Error fetching weather data: {str(e)}",
+            status=500,
+            mimetype="text/plain; charset=utf-8",
         )
 
 
