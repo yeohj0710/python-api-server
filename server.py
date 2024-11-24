@@ -1,6 +1,6 @@
-from flask import Flask, Response, jsonify, make_response
+from flask import Flask, Response, jsonify, make_response, request
 import asyncio
-from weather import get_weather_and_forecast
+from weather import get_weather_and_forecast, dfs_xy_conv
 
 app = Flask(__name__)
 
@@ -24,7 +24,14 @@ def hello():
 @app.route("/weather", methods=["GET"])
 async def weather():
     try:
-        result = await get_weather_and_forecast()
+        latitude = request.args.get("latitude", default=None, type=float)
+        longitude = request.args.get("longitude", default=None, type=float)
+        if latitude is None or longitude is None:
+            # 기본값: 서울특별시 좌표
+            latitude = 37.5665
+            longitude = 126.9780
+        grid = dfs_xy_conv(latitude, longitude)
+        result = await get_weather_and_forecast(grid["x"], grid["y"])
         return Response(result, mimetype="text/plain; charset=utf-8")
     except Exception as e:
         return Response(
