@@ -9,9 +9,6 @@ load_dotenv()
 BASE_URL = os.getenv("BASE_URL")
 API_KEY = os.getenv("API_KEY")
 
-GRID_X = 61
-GRID_Y = 126
-
 KST = pytz.timezone("Asia/Seoul")
 
 
@@ -55,7 +52,7 @@ def dfs_xy_conv(lat, lon):
     return rs
 
 
-async def get_weather_and_forecast(GRID_X, GRID_Y):
+async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
     now = datetime.now(KST)
 
     base_date = now.strftime("%Y%m%d")
@@ -144,20 +141,24 @@ async def get_weather_and_forecast(GRID_X, GRID_Y):
                 result = []
 
                 if rain_periods and snow_periods:
-                    result.append("🌧️❄️ 오늘은 비와 눈이 예상됩니다. ")
+                    result.append(
+                        f"🌧️❄️ 오늘 {location_name}에서는 비와 눈이 예상됩니다. "
+                    )
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif rain_periods:
-                    result.append("🌧️ 오늘은 비가 예상됩니다. ")
+                    result.append(f"🌧️ 오늘 {location_name}에서는 비가 예상됩니다. ")
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif snow_periods:
-                    result.append("❄️ 오늘은 눈이 예상됩니다. ")
+                    result.append(f"❄️ 오늘 {location_name}에서는 눈이 예상됩니다. ")
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 else:
-                    result.append("☀️ 오늘은 비나 눈이 오지 않을 예정입니다. ")
+                    result.append(
+                        f"☀️ 오늘 {location_name}에서는 비나 눈이 오지 않을 예정입니다. "
+                    )
                     result.append("🌈 맑은 날씨를 즐기세요! ")
 
                 if min_temp is not None and max_temp is not None:
@@ -166,8 +167,13 @@ async def get_weather_and_forecast(GRID_X, GRID_Y):
                         if max_temp >= 30
                         else "☀️" if max_temp >= 25 else "🌤️" if max_temp >= 15 else "❄️"
                     )
+                    min_temp_emoji = (
+                        "🔥"
+                        if min_temp >= 30
+                        else "☀️" if min_temp >= 25 else "🌤️" if min_temp >= 15 else "❄️"
+                    )
                     result.append(
-                        f"🌡️ 오늘의 ❄️ 최저 기온은 {min_temp:.1f}도, {max_temp_emoji} 최고 기온은 {max_temp:.1f}도예요. "
+                        f"🌡️ 오늘의 {min_temp_emoji} 최저 기온은 {min_temp:.1f}도, {max_temp_emoji} 최고 기온은 {max_temp:.1f}도예요. "
                     )
                 else:
                     result.append("🌡️ 기온 데이터를 가져올 수 없습니다. ")
