@@ -52,11 +52,22 @@ def dfs_xy_conv(lat, lon):
     return rs
 
 
+from datetime import datetime, timedelta
+
+
 async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
     now = datetime.now(KST)
-
     base_date = now.strftime("%Y%m%d")
-    base_time = "0500"
+    base_time = now.strftime("%H%M")
+
+    base_times = ["2300", "2000", "1700", "1400", "1100", "0800", "0500", "0200"]
+    for bt in base_times:
+        if int(bt) <= int(base_time):
+            base_time = bt
+            break
+    else:
+        base_time = "2300"
+        base_date = (now - timedelta(days=1)).strftime("%Y%m%d")
 
     params = {
         "serviceKey": API_KEY,
@@ -82,49 +93,53 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
                 )
 
                 if not items:
-                    return "❌ 현재 날씨 데이터를 가져올 수 없습니다. 🌅 오늘 날씨는 오전 6시에 발표되며, 오전 7시에 알림이 발송됩니다. "
+                    return (
+                        f"❌ 현재 {location_name}의 날씨 데이터를 가져올 수 없습니다."
+                    )
 
-                hourly_forecast = {}
+                end_time = now + timedelta(hours=24)
+
                 rain_times = []
                 snow_times = []
                 temperatures = []
 
                 for item in items:
+                    fcst_date = item["fcstDate"]
                     fcst_time = item["fcstTime"]
                     category = item["category"]
                     value = item["fcstValue"]
 
-                    if fcst_time not in hourly_forecast:
-                        hourly_forecast[fcst_time] = {}
+                    fcst_datetime = datetime.strptime(
+                        fcst_date + fcst_time, "%Y%m%d%H%M"
+                    )
+                    fcst_datetime = KST.localize(fcst_datetime)
 
-                    if category == "PTY":
-                        hourly_forecast[fcst_time]["rain"] = value
-                        if value == "1":
-                            rain_times.append(int(fcst_time[:2]))
-                        elif value == "3":
-                            snow_times.append(int(fcst_time[:2]))
+                    if now <= fcst_datetime <= end_time:
+                        if category == "PTY":
+                            if value == "1":
+                                rain_times.append(fcst_datetime)
+                            elif value == "3":
+                                snow_times.append(fcst_datetime)
 
-                    if category == "TMP":
-                        temperature = float(value)
-                        hourly_forecast[fcst_time]["temperature"] = temperature
-                        temperatures.append(temperature)
+                        if category == "TMP":
+                            temperature = float(value)
+                            temperatures.append((fcst_datetime, temperature))
 
-                max_temp = max(temperatures) if temperatures else None
-                min_temp = min(temperatures) if temperatures else None
+                temp_values = [temp for _, temp in temperatures]
+                max_temp = max(temp_values) if temp_values else None
+                min_temp = min(temp_values) if temp_values else None
 
-                def format_time_ranges(times):
-                    if not times:
+                def format_time_ranges(datetimes):
+                    if not datetimes:
                         return []
-
+                    times = [dt.hour for dt in datetimes]
                     times = sorted(set(times))
                     intervals = []
                     start = times[0]
-
                     for i in range(1, len(times)):
                         if times[i] != times[i - 1] + 1:
                             intervals.append((start, times[i - 1]))
                             start = times[i]
-
                     intervals.append((start, times[-1]))
                     return [
                         (
@@ -140,24 +155,31 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
 
                 result = []
 
+                start_time_str = now.strftime("%m/%d %H시")
+                end_time_str = end_time.strftime("%m/%d %H시")
+
                 if rain_periods and snow_periods:
                     result.append(
-                        f"🌧️❄️ 오늘 {location_name}에서는 비와 눈이 예상됩니다. "
+                        f"🌧️❄️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비와 눈이 예상됩니다. "
                     )
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif rain_periods:
-                    result.append(f"🌧️ 오늘 {location_name}에서는 비가 예상됩니다. ")
+                    result.append(
+                        f"🌧️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비가 예상됩니다. "
+                    )
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif snow_periods:
-                    result.append(f"❄️ 오늘 {location_name}에서는 눈이 예상됩니다. ")
+                    result.append(
+                        f"❄️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 눈이 예상됩니다. "
+                    )
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 else:
                     result.append(
-                        f"☀️ 오늘 {location_name}에서는 비나 눈이 오지 않을 예정입니다. "
+                        f"☀️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비나 눈이 오지 않을 예정입니다. "
                     )
                     result.append("🌈 맑은 날씨를 즐기세요! ")
 
@@ -165,15 +187,15 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
                     max_temp_emoji = (
                         "🔥"
                         if max_temp >= 30
-                        else "☀️" if max_temp >= 25 else "🌤️" if max_temp >= 15 else "❄️"
+                        else "☀️" if max_temp >= 25 else "🌤️" if max_temp >= 10 else "❄️"
                     )
                     min_temp_emoji = (
                         "🔥"
                         if min_temp >= 30
-                        else "☀️" if min_temp >= 25 else "🌤️" if min_temp >= 15 else "❄️"
+                        else "☀️" if min_temp >= 25 else "🌤️" if min_temp >= 10 else "❄️"
                     )
                     result.append(
-                        f"🌡️ 오늘의 {min_temp_emoji} 최저 기온은 {min_temp:.1f}도, {max_temp_emoji} 최고 기온은 {max_temp:.1f}도예요. "
+                        f"🌡️ 예상되는 최저 기온은 {min_temp_emoji} {min_temp:.1f}도, 최고 기온은 {max_temp_emoji} {max_temp:.1f}도예요. "
                     )
                 else:
                     result.append("🌡️ 기온 데이터를 가져올 수 없습니다. ")
@@ -181,4 +203,4 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
                 return "".join(result)
 
     except Exception as e:
-        return f"❌ 날씨 정보를 가져오는 중 오류가 발생했습니다: {e} "
+        return f"❌ {location_name}의 날씨 정보를 가져오는 중 오류가 발생했습니다: {e} "

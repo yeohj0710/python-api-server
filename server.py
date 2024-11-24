@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify, make_response, request
+from flask import Flask, Response, request
 from weather import get_weather_and_forecast, dfs_xy_conv
 import aiohttp
 
@@ -22,27 +22,27 @@ def hello():
 
 
 async def reverse_geocode(latitude, longitude):
-    url = "https://nominatim.openstreetmap.org/reverse"
+    url = "https://api.bigdatacloud.net/data/reverse-geocode-client"
     params = {
-        "lat": latitude,
-        "lon": longitude,
-        "format": "json",
-        "accept-language": "ko",
+        "latitude": latitude,
+        "longitude": longitude,
+        "localityLanguage": "ko",
     }
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params) as response:
             data = await response.json()
-            address = data.get("address", {})
+            address_parts = data.get("localityInfo", {}).get("administrative", [])
 
-            state = address.get("state", "")
-            city = address.get("city", "")
-            county = address.get("county", "")
-            town = address.get("town", "")
-            village = address.get("village", "")
+            unique_parts = []
+            seen = set()
+            for part in address_parts:
+                name = part.get("name", "")
+                if name and name not in seen and name != "대한민국":
+                    unique_parts.append(name)
+                    seen.add(name)
 
-            location_parts = [state, city or county or town or village]
-            location = " ".join(filter(None, location_parts))
-            return location
+            address = " ".join(unique_parts)
+            return address
 
 
 @app.route("/weather", methods=["GET"])
@@ -54,6 +54,7 @@ async def weather():
             # 기본값: 서울특별시 좌표
             latitude = 37.5665
             longitude = 126.9780
+
         grid = dfs_xy_conv(latitude, longitude)
         address = await reverse_geocode(latitude, longitude)
         result = await get_weather_and_forecast(grid["x"], grid["y"], address)
