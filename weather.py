@@ -155,31 +155,43 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
 
                 result = []
 
-                start_time_str = now.strftime("%m/%d %H시")
-                end_time_str = end_time.strftime("%m/%d %H시")
+                weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+                start_weekday_str = weekdays[now.weekday()]
+                end_weekday_str = weekdays[end_time.weekday()]
+
+                start_time_str = (
+                    now.strftime("%m/%d")
+                    + f"({start_weekday_str}) "
+                    + now.strftime("%H시")
+                )
+                end_time_str = (
+                    end_time.strftime("%m/%d")
+                    + f"({end_weekday_str}) "
+                    + end_time.strftime("%H시")
+                )
 
                 if rain_periods and snow_periods:
                     result.append(
-                        f"🌧️❄️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비와 눈이 예상됩니다. "
+                        f"🌧️❄️ {location_name}에서는 {start_time_str}부터 24시간 이내 비와 눈이 예상돼요. "
                     )
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif rain_periods:
                     result.append(
-                        f"🌧️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비가 예상됩니다. "
+                        f"🌧️ {location_name}에서는 {start_time_str}부터 24시간 이내 비가 예상돼요. "
                     )
                     result.append(f"⏰ 비가 오는 시간대: {', '.join(rain_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 elif snow_periods:
                     result.append(
-                        f"❄️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 눈이 예상됩니다. "
+                        f"❄️ {location_name}에서는 {start_time_str}부터 24시간 이내 눈이 예상돼요. "
                     )
                     result.append(f"⏰ 눈이 오는 시간대: {', '.join(snow_periods)}. ")
                     result.append("☂️ 우산을 꼭 챙기세요! ")
                 else:
                     result.append(
-                        f"☀️ {location_name}의 {start_time_str}부터 {end_time_str}까지 24시간 이내 비나 눈이 오지 않을 예정입니다. "
+                        f"☀️ {location_name}에서는 {start_time_str}부터 24시간 이내에 비나 눈이 오지 않을 예정이에요. "
                     )
                     result.append("🌈 맑은 날씨를 즐기세요! ")
 
@@ -187,12 +199,24 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
                     max_temp_emoji = (
                         "🔥"
                         if max_temp >= 30
-                        else "☀️" if max_temp >= 25 else "🌤️" if max_temp >= 10 else "❄️"
+                        else (
+                            "☀️"
+                            if max_temp >= 25
+                            else (
+                                "🌤️" if max_temp >= 15 else "🌥️" if max_temp >= 5 else "❄️"
+                            )
+                        )
                     )
                     min_temp_emoji = (
                         "🔥"
                         if min_temp >= 30
-                        else "☀️" if min_temp >= 25 else "🌤️" if min_temp >= 10 else "❄️"
+                        else (
+                            "☀️"
+                            if min_temp >= 25
+                            else (
+                                "🌤️" if min_temp >= 15 else "🌥️" if min_temp >= 5 else "❄️"
+                            )
+                        )
                     )
                     result.append(
                         f"🌡️ 예상되는 최저 기온은 {min_temp_emoji} {min_temp:.1f}도, 최고 기온은 {max_temp_emoji} {max_temp:.1f}도예요. "
