@@ -156,19 +156,18 @@ async def get_weather_and_forecast(GRID_X, GRID_Y, location_name):
                 result = []
 
                 weekdays = ["월", "화", "수", "목", "금", "토", "일"]
-                start_weekday_str = weekdays[now.weekday()]
-                end_weekday_str = weekdays[end_time.weekday()]
 
-                start_time_str = (
-                    now.strftime("%m/%d")
-                    + f"({start_weekday_str}) "
-                    + now.strftime("%H시")
-                )
-                end_time_str = (
-                    end_time.strftime("%m/%d")
-                    + f"({end_weekday_str}) "
-                    + end_time.strftime("%H시")
-                )
+                def format_time(dt):
+                    hour = dt.hour
+                    period = "오전" if hour < 12 else "오후"
+                    hour_12 = hour if hour <= 12 else hour - 12
+                    if hour_12 == 0:
+                        hour_12 = 12
+                    weekday_str = weekdays[dt.weekday()]
+                    return f"{dt.strftime('%m/%d')}({weekday_str}) {period} {hour_12}시"
+
+                start_time_str = format_time(now)
+                end_time_str = format_time(end_time)
 
                 if rain_periods and snow_periods:
                     result.append(
